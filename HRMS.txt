@@ -1,0 +1,141 @@
+using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+
+public enum HRMSType
+{
+    HRMS1,
+    HRMS2
+}
+
+public interface IEmployeeDataAdapter
+{
+    string GetEmployeeData();
+}
+
+public class HRMS1
+{
+    public List<Employee1> GetEmployeeList() => new List<Employee1>
+    {
+        new Employee1 { Id = 1, Name = "Alice", Position = "Developer" },
+        new Employee1 { Id = 2, Name = "Bob", Position = "Manager" }
+    };
+}
+
+public class Employee1
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public string Position { get; set; }
+}
+
+public class HRMS1Adapter : IEmployeeDataAdapter
+{
+    private readonly HRMS1 _hrms1;
+
+    public HRMS1Adapter(HRMS1 hrms1)
+    {
+        _hrms1 = hrms1;
+    }
+
+    public string GetEmployeeData()
+    {
+        var employees = _hrms1.GetEmployeeList();
+        var jsonData = JsonConvert.SerializeObject(employees);
+        return jsonData;
+    }
+}
+
+public class HRMS2
+{
+    public List<Employee2> FetchAllEmployees() => new List<Employee2>
+    {
+        new Employee2 { EmployeeId = 3, FullName = "Charlie", JobTitle = "Designer" },
+        new Employee2 { EmployeeId = 4, FullName = "Dave", JobTitle = "Tester" }
+    };
+}
+
+public class Employee2
+{
+    public int EmployeeId { get; set; }
+    public string FullName { get; set; }
+    public string JobTitle { get; set; }
+}
+
+public class HRMS2Adapter : IEmployeeDataAdapter
+{
+    private readonly HRMS2 _hrms2;
+
+    public HRMS2Adapter(HRMS2 hrms2)
+    {
+        _hrms2 = hrms2;
+    }
+
+    public string GetEmployeeData()
+    {
+        var employees = _hrms2.FetchAllEmployees();
+        var jsonData = JsonConvert.SerializeObject(employees);
+        return jsonData;
+    }
+}
+
+public class EmployeeDataAdapterFactory
+{
+    public static IEmployeeDataAdapter CreateAdapter(HRMSType hrmsType)
+    {
+        switch (hrmsType)
+        {
+            case HRMSType.HRMS1:
+                var hrms1 = new HRMS1();
+                return new HRMS1Adapter(hrms1);
+            case HRMSType.HRMS2:
+                var hrms2 = new HRMS2();
+                return new HRMS2Adapter(hrms2);
+            default:
+                throw new ArgumentException("Invalid HRMS type");
+        }
+    }
+}
+
+public class HRMSClient
+{
+    private readonly IEmployeeDataAdapter _adapter;
+
+    public HRMSClient(IEmployeeDataAdapter adapter)
+    {
+        _adapter = adapter;
+    }
+
+    public void DisplayEmployeeData()
+    {
+        var jsonData = _adapter.GetEmployeeData();
+        Console.WriteLine(jsonData);
+    }
+}
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        Console.WriteLine("Enter HRMS type (HRMS1 or HRMS2):");
+        var input = Console.ReadLine();
+
+        if (Enum.TryParse(input, true, out HRMSType selectedHrms))
+        {
+            try
+            {
+                var adapter = EmployeeDataAdapterFactory.CreateAdapter(selectedHrms);
+                var client = new HRMSClient(adapter);
+                client.DisplayEmployeeData();
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+        else
+        {
+            Console.WriteLine("Invalid HRMS type entered.");
+        }
+    }
+}
